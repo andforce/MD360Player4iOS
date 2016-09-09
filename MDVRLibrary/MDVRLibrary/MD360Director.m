@@ -19,10 +19,11 @@
     
     float mEyeZ;// = 0f;
     float mEyeX;// = 0f;
-    float mAngle;// = 0f;
-    float mRatio;// = 0f;
-    float mNear;// = 0f;
+    float mAngleX;// = 0f;
+    float mAngleY;
     float mLookX;// = 0f;
+    float mRatio;// = 0f;
+    float mNearScale;// = 0f;
     
     GLKMatrix4 mCurrentRotation;// = new float[16];
     GLKMatrix4 mAccumulatedRotation;// = new float[16];
@@ -39,6 +40,8 @@
 
 @implementation MD360Director
 
+static float sNear = 0.7f;
+
 - (instancetype)init{
     self = [super init];
     if (self) {
@@ -49,9 +52,10 @@
 
 - (void) initValue{
     mEyeZ = 0;
-    mAngle = 0;
+    mAngleX = 0;
+    mAngleY = 0;
     mRatio = 1.5f;
-    mNear = 0.7f;
+    mNearScale = 1.0f;
     mEyeX = 0;
     mLookX = 0;
     mModelMatrix = mViewMatrix = mProjectionMatrix = mMVMatrix = mMVPMatrix = GLKMatrix4Identity;
@@ -63,7 +67,6 @@
 }
 
 - (void) setup{
-    
     [self initCamera];
     [self initModel];
 }
@@ -71,7 +74,7 @@
 - (void)initModel{
     mAccumulatedRotation = mSensorMatrix = GLKMatrix4Identity;
     // Model Matrix
-    [self updateModelRotate:mAngle];
+    [self updateModelRotateAngleX:mAngleX angleY:mAngleY];
 }
 
 - (void)initCamera{
@@ -93,9 +96,9 @@
     
     mCurrentRotation = GLKMatrix4Identity;
 
-    mCurrentRotation = GLKMatrix4Rotate(mCurrentRotation, MD_DEGREES_TO_RADIANS(-mDeltaY), 1.0f, 0.0f, 0.0f);
+    mCurrentRotation = GLKMatrix4Rotate(mCurrentRotation, MD_DEGREES_TO_RADIANS(-mDeltaY + mAngleY), 1.0f, 0.0f, 0.0f);
     
-    mCurrentRotation = GLKMatrix4Rotate(mCurrentRotation, MD_DEGREES_TO_RADIANS(-mDeltaX + mAngle), 0.0f, 1.0f, 0.0f);
+    mCurrentRotation = GLKMatrix4Rotate(mCurrentRotation, MD_DEGREES_TO_RADIANS(-mDeltaX + mAngleX), 0.0f, 1.0f, 0.0f);
     
     mCurrentRotation = GLKMatrix4Multiply(mSensorMatrix, mCurrentRotation);
     
@@ -129,21 +132,17 @@
 
 - (void) updateProjection:(int)width height:(int)height{
     mRatio = width * 1.0f / height;
-    [self updateProjectionNear:mNear];
+    [self updateProjection];
 }
 
-- (void) updateProjectionNear:(float)near{
-    mNear = near;
-    float left = -mRatio/2;
-    float right = mRatio/2;
-    float bottom = -0.5f;
-    float top = 0.5f;
-    float far = 500;
-    mProjectionMatrix = GLKMatrix4MakeFrustum(left, right, bottom, top, mNear, far);
+- (void) updateProjectionNearScale:(float)scale{
+    mNearScale = scale;
+    [self updateProjection];
 }
 
-- (void) updateModelRotate:(float)angle{
-    mAngle = angle;
+- (void) updateModelRotateAngleX:(float)angleX angleY:(float)angleY {
+    mAngleX = angleX;
+    mAngleY = angleY;
 }
 
 - (void) updateViewMatrix{
@@ -160,6 +159,15 @@
     mViewMatrix = GLKMatrix4MakeLookAt(eyeX, eyeY, eyeZ, lookX, lookY, lookZ, upX, upY, upZ);
 }
 
+- (void) updateProjection{
+    float left = -mRatio/2;
+    float right = mRatio/2;
+    float bottom = -0.5f;
+    float top = 0.5f;
+    float far = 500;
+    mProjectionMatrix = GLKMatrix4MakeFrustum(left, right, bottom, top, [self getNear], far);
+}
+
 - (void) updateSensorMatrix:(GLKMatrix4)sensor{
     mSensorMatrix = sensor;
 }
@@ -167,6 +175,10 @@
 - (void) updateTouch:(float)distX distY:(int)distY{
     mDeltaX += distX;
     mDeltaY += distY;
+}
+
+- (void) setProjection:(GLKMatrix4)project{
+    mProjectionMatrix = project;
 }
 
 - (void) setLookX:(float)lookX{
@@ -177,36 +189,27 @@
     mEyeX  = eyeX;
 }
 
-#pragma mark - touches
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-    if([self.touchDelegate respondsToSelector:@selector(touchesBegan:withEvent:)]){
-        [self.touchDelegate touchesBegan:touches withEvent:event];
-    }
+- (void) setAngleX:(float)angleX{
+    mAngleX = angleX;
 }
 
-- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
-    if([self.touchDelegate respondsToSelector:@selector(touchesMoved:withEvent:)]){
-        [self.touchDelegate touchesMoved:touches withEvent:event];
-    }
+- (void) setAngleY:(float)angleY{
+    mAngleY = angleY;
 }
 
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
-    if([self.touchDelegate respondsToSelector:@selector(touchesEnded:withEvent:)]){
-        [self.touchDelegate touchesEnded:touches withEvent:event];
-    }
+- (float) getNear{
+    return mNearScale * sNear;
 }
 
-- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
-    if([self.touchDelegate respondsToSelector:@selector(touchesCancelled:withEvent:)]){
-        [self.touchDelegate touchesCancelled:touches withEvent:event];
-    }
+- (float) getRatio{
+    return mRatio;
 }
 
 @end
 
 #pragma mark 
-@implementation MD360DirectorFactory
-+ (MD360Director*) create:(int) index{
+@implementation MD360DefaultDirectorFactory
+- (MD360Director*) createDirector:(int) index{
     MD360Director* director = [[MD360Director alloc]init];
     switch (index) {
         case 1:

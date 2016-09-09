@@ -9,28 +9,34 @@
 #import <Foundation/Foundation.h>
 #import "GLUtil.h"
 #import "MDVideoDataAdapter.h"
-#import "MDVRLibrary.h"
+#import "MDVRHeader.h"
 
-@protocol IMD360Texture <NSObject>
-@optional
-- (void) onTextureCreated:(GLuint)textureId;
-- (GLuint) createTextureId;
+
+@interface MD360Texture : NSObject<IMDDestroyable>
+@property (nonatomic,weak) MDSizeContext* sizeContext;
+@property (nonatomic,weak) EAGLContext* context;
+@property (nonatomic,strong) MD360Program* program;
+
+- (void) createTexture:(EAGLContext*)context program:(MD360Program*) program;
+- (void) resizeViewport:(int)width height:(int)height;
+- (BOOL) updateTexture:(EAGLContext*)context;
+
+- (BOOL) beginCommit;
+- (void) postCommit;
 @end
 
-@interface MD360Texture : NSObject<IMD360Texture,IMDDestroyable>
-
-@property (nonatomic,readonly) int mWidth;
-@property (nonatomic,readonly) int mHeight;
-
-- (void) createTexture;
-- (void) resize:(int)width height:(int)height;
-- (void) updateTexture:(EAGLContext*)context;
+@interface MDRGBABitmapTexture : MD360Texture<TextureCallback>
++ (MD360Texture*) createWithProvider:(id<IMDImageProvider>) provider;
 @end
 
-@interface MD360BitmapTexture : MD360Texture
-
+@interface MDRGBAVideoTexture : MD360Texture
++ (MD360Texture*) createWithDataAdapter:(id<MDVideoDataAdapter>) adapter;
 @end
 
-@interface MD360VideoTexture : MD360Texture
-+ (MD360Texture*) createWithAVPlayerItem:(AVPlayerItem*) playerItem;
+@interface MDYUV420PVideoTexture : MD360Texture
++ (MD360Texture*) createWithProvider:(id<IMDYUV420PProvider>) provider;
+@end
+
+@interface MDDirectlyTexture : MD360Texture
+
 @end

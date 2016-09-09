@@ -19,9 +19,11 @@
 #pragma mark MDModeManager
 @interface MDModeManager : NSObject<IMDModeStrategy>
 @property(nonatomic,readonly) int mMode;
+@property(nonatomic,strong) id mStrategy;
 - (instancetype)initWithDefault:(int)mode;
 - (void) prepare;
 - (void) switchMode:(int)mode;
 - (void) switchMode;
-- (id<IMDModeStrategy>) createStrategy:(int)mode;
+- (id) createStrategy:(int)mode;
+- (NSArray*) createModes;
 @end

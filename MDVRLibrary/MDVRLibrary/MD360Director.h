@@ -10,28 +10,41 @@
 #import "MD360Program.h"
 #import <UIKit/UIKit.h>
 #import <GLKit/GLKit.h>
-#import "MDVRLibrary.h"
-
-#pragma mark MDTouchDelegate
-@protocol MDTouchDelegate <NSObject>
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event;
-- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event;
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event;
-- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event;
-@end
+#import "MDVRHeader.h"
 
 #pragma mark MD360Director
-@interface MD360Director : NSObject<MDTouchDelegate,IMDDestroyable>
-@property (nonatomic,weak) id<MDTouchDelegate> touchDelegate;
+@interface MD360Director : NSObject<IMDDestroyable>
+- (instancetype)init;
 - (void) shot:(MD360Program*) program;
 - (void) reset;
 - (void) updateProjection:(int)width height:(int)height;
+- (void) updateProjectionNearScale:(float)scale;
+- (void) updateProjection;
 - (void) updateSensorMatrix:(GLKMatrix4)sensor;
 - (void) updateTouch:(float)distX distY:(int)distY;
+
+- (float) getRatio;
+- (float) getNear;
+
+- (void) setProjection:(GLKMatrix4)project;
+- (void) setLookX:(float)lookX;
+- (void) setEyeX:(float)eyeX;
+- (void) setAngleX:(float)angleX;
+- (void) setAngleY:(float)angleY;
+- (void) setup;
+
 @end
 
-#pragma mark MD360Director
-@interface MD360DirectorFactory : NSObject
-+ (MD360Director*) create:(int) index;
+#pragma mark MD360DirectorFactory
+@protocol MD360DirectorFactory <NSObject>
+@required
+- (MD360Director*) createDirector:(int) index;
 @end
+
+#pragma mark MD360DirectorFactory
+@interface MD360DefaultDirectorFactory : NSObject<MD360DirectorFactory>
+
+@end
+
+
 

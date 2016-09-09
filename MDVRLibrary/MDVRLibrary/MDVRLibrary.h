@@ -9,14 +9,15 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 #import <UIKit/UIKit.h>
-
-#define MDVR_RAW_NAME @ "vrlibraw.bundle"
-#define MDVR_RAW_PATH [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent: MDVR_RAW_NAME]
-#define MDVR_RAW [NSBundle bundleWithPath: MDVR_RAW_PATH]
+#import "MD360Director.h"
+#import "MDVideoDataAdapter.h"
+#import "MDExt.h"
+#import "MDVRHeader.h"
 
 typedef NS_ENUM(NSInteger, MDModeInteractive) {
     MDModeInteractiveTouch,
     MDModeInteractiveMotion,
+    MDModeInteractiveMotionWithTouch,
 };
 
 typedef NS_ENUM(NSInteger, MDModeDisplay) {
@@ -24,15 +25,34 @@ typedef NS_ENUM(NSInteger, MDModeDisplay) {
     MDModeDisplayGlass,
 };
 
+typedef NS_ENUM(NSInteger, MDModeProjection) {
+    MDModeProjectionSphere,
+    MDModeProjectionDome180,
+    MDModeProjectionDome230,
+    MDModeProjectionDome180Upper,
+    MDModeProjectionDome230Upper,
+    MDModeProjectionStereoSphere,
+    MDModeProjectionPlaneFit,
+    MDModeProjectionPlaneCrop,
+    MDModeProjectionPlaneFull,
+};
+
 @class MDVRLibrary;
 #pragma mark MDVRConfiguration
 @interface MDVRConfiguration : NSObject
 - (void) asVideo:(AVPlayerItem*)playerItem;
-- (void) asImage:(id)data;
+- (void) asVideoWithDataAdatper:(id<MDVideoDataAdapter>)adapter;
+- (void) asVideoWithYUV420PProvider:(id<IMDYUV420PProvider>)provider;
+
+- (void) asImage:(id<IMDImageProvider>)data;
+
 - (void) interactiveMode:(MDModeInteractive)interactiveMode;
 - (void) displayMode:(MDModeDisplay)displayMode;
+- (void) projectionMode:(MDModeProjection)projectionMode;
+- (void) pinchEnabled:(bool)pinch;
 - (void) setContainer:(UIViewController*)vc;
 - (void) setContainer:(UIViewController*)vc view:(UIView*)view;
+- (void) setDirectorFactory:(id<MD360DirectorFactory>) directorFactory;
 - (MDVRLibrary*) build;
 @end
 
@@ -41,14 +61,14 @@ typedef NS_ENUM(NSInteger, MDModeDisplay) {
 + (MDVRConfiguration*) createConfig;
 
 - (void) switchInteractiveMode;
-// - (void) switchInteractiveMode:(MDModeInteractive)interactiveMode;
+- (void) switchInteractiveMode:(MDModeInteractive)interactiveMode;
 - (MDModeInteractive) getInteractiveMdoe;
 
 - (void) switchDisplayMode:(MDModeDisplay)displayMode;
 - (void) switchDisplayMode;
 - (MDModeDisplay) getDisplayMdoe;
-@end
 
-@protocol IMDDestroyable <NSObject>
--(void) destroy;
+- (void) switchProjectionMode;
+- (void) switchProjectionMode:(MDModeProjection)projectionMode;
+- (MDModeProjection) getProjectionMode;
 @end
